@@ -44,13 +44,13 @@ import pandas as pd
 import json
 import os
 import math
+import sys
 
 # ---------------------------------------------------------------------------
 # CONFIGURATION
 # ---------------------------------------------------------------------------
-CONFIG_FILE   = 'setup_config.json'
-CSV_FILE      = 'worm_results.csv'
-VIDEO_PATH    = 'worm videos/test_test70001.avi'
+# Video path is passed as a CLI argument:
+#   python PySWIP_v4.py "worm videos/my_video.avi"
 
 BG_ALPHA      = 2 ** -5        # decaying background alpha = 0.03125
 BETA_T        = 0.8            # relaxed threshold = BETA_T * T
@@ -511,16 +511,6 @@ def nothing(_):
     pass
 
 
-def load_config():
-    if os.path.exists(CONFIG_FILE):
-        try:
-            with open(CONFIG_FILE, 'r') as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {}
-
-
 # ---------------------------------------------------------------------------
 # LABEL PANEL  (Qt font workaround — draw with cv2.putText only)
 # ---------------------------------------------------------------------------
@@ -746,10 +736,40 @@ def build_worm_preview(canvas, gray_orig, scale_d, T_val, small_obj_area,
 def main():
     global dragging_wid
 
-    cap     = cv2.VideoCapture(VIDEO_PATH)
+    if len(sys.argv) != 2:
+        print("Error: expected exactly one argument (path to video file).")
+        print(f"Usage: python PySWIP_v4.py <video_path>")
+        print(f"Example: python PySWIP_v4.py \"worm videos/test.avi\"")
+        sys.exit(1)
+
+    video_path = sys.argv[1]
+    if not os.path.exists(video_path):
+        print(f"Error: video not found at '{video_path}'")
+        sys.exit(1)
+
+    # Derive output directory from video filename
+    video_name = os.path.splitext(os.path.basename(video_path))[0]
+    output_dir = os.path.join('outputs', video_name)
+    os.makedirs(output_dir, exist_ok=True)
+
+    config_file = os.path.join(output_dir, 'setup_config.json')
+    csv_file    = os.path.join(output_dir, 'worm_results.csv')
+
+    cap     = cv2.VideoCapture(video_path)
     h_orig  = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     w_orig  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     total_f = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    # Use local config resolver instead of global CONFIG_FILE
+    def load_config():
+        if os.path.exists(config_file):
+            try:
+                with open(config_file, 'r') as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return {}
+
     config  = load_config()
 
     # -----------------------------------------------------------------------
@@ -851,7 +871,7 @@ def main():
             sp['Threshold'] = T_val; sp['Small Obj'] = sobj; sp['Max Area'] = max_a
             saved_rows = cv2.getTrackbarPos('Rows', 'Setup')
             saved_cols = cv2.getTrackbarPos('Cols', 'Setup')
-            with open(CONFIG_FILE, 'w') as f:
+            with open(config_file, 'w') as f:
                 json.dump(sp, f)
             break
         if key == ord('q'):
@@ -1112,9 +1132,9 @@ def main():
     finally:
         if data_buffer:
             df = pd.DataFrame(data_buffer, columns=CSV_COLUMNS)
-            df.to_csv(CSV_FILE, index=False)
+            df.to_csv(csv_file, index=False)
             valid = df.dropna(subset=['ObjectID'])
-            print(f"Saved {len(df)} rows → {CSV_FILE}")
+            print(f"Saved {len(df)} rows → {csv_file}")
             print(f"  {len(valid)} rows with detected objects, "
                   f"{int(valid['ObjectID'].nunique())} unique ObjectIDs")
             print(f"  Columns ({len(CSV_COLUMNS)}): {', '.join(CSV_COLUMNS)}")

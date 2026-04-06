@@ -4,8 +4,26 @@ library(tidyverse)
 library(data.table)
 library(ggpubr)
 
-input_data <- "worm_results.csv"
-output_path <- "worm_results_filtered.csv"
+# Resolve input directory: requires exactly one CLI argument
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) != 1) {
+  stop(paste0(
+    "Error: expected exactly one argument (path to outputs directory).\n",
+    "Usage: Rscript PySWIPR_v1.R <outputs_dir>\n",
+    "Example: Rscript PySWIPR_v1.R outputs/test_test70001/"
+  ))
+}
+input_dir <- args[1]
+if (!dir.exists(input_dir)) {
+  stop(paste0("Directory not found: '", input_dir, "'"))
+}
+
+input_data  <- file.path(input_dir, "worm_results.csv")
+output_base <- input_dir
+
+if (!file.exists(input_data)) {
+  stop(paste0("Input file not found: ", input_data, "\nRun PySWIP_v4.py first."))
+}
 
 raw_data <- as_tibble(fread(input_data))
 
@@ -14,7 +32,7 @@ raw_data <- as_tibble(fread(input_data))
 
 solidity_filtered <- raw_data %>% 
   filter(Solidity <= 1)
-fwrite(solidity_filtered, "worm_results_1solidity.csv")
+fwrite(solidity_filtered, file.path(output_base, "worm_results_1solidity.csv"))
 # Great results - ts is carrying me lol
 
 # Second step: Eliminate objects with short cumulative existing time
@@ -38,7 +56,7 @@ x <- et_df_filtered[
 ]
 
 solidity_et_filtered <- as_tibble(x)
-fwrite(solidity_et_filtered, "worm_results_2solidityEt.csv")
+fwrite(solidity_et_filtered, file.path(output_base, "worm_results_2solidityEt.csv"))
 
 # For objects overlapping each other, try resolving so that we only keep the object with the greater sd of angle
 df1 <- solidity_et_filtered %>% 
@@ -91,7 +109,7 @@ solidity_et_ol_filtered <- as_tibble(solidity_et_filtered[
   on = list(TimeID = TimeID, Well = Well, ObjectID = ObjectID)
 ])
 # Overlapping-removed ??? lets check 
-fwrite(solidity_et_ol_filtered, "worm_results_3solidityEtOl.csv")
+fwrite(solidity_et_ol_filtered, file.path(output_base, "worm_results_3solidityEtOl.csv"))
 # Holy SHIT it worked. I have CLEAN DATA that i can finally start working on the counting logic...holyy shit...
 
 # Summary: 3 step filtering process
@@ -123,5 +141,5 @@ m <- solidity_et_ol_filtered[
 ]
 solidity_et_ol_tp_filtered <- as_tibble(m)
 
-fwrite(solidity_et_ol_tp_filtered, "worm_results_4solidityEtOlTp.csv")
+fwrite(solidity_et_ol_tp_filtered, file.path(output_base, "worm_results_4solidityEtOlTp.csv"))
 # Then the data cleaning part is done, I will name this thing PySWIPR since we use R to clean PySWIP outputs

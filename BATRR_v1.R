@@ -6,7 +6,26 @@ library(data.table)
 library(ggpubr)
 library(pracma)
 
-data_path <- "worm_results_4solidityEtOlTp.csv"
+# Resolve input directory: requires exactly one CLI argument
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) != 1) {
+  stop(paste0(
+    "Error: expected exactly one argument (path to outputs directory).\n",
+    "Usage: Rscript BATRR_v1.R <outputs_dir>\n",
+    "Example: Rscript BATRR_v1.R outputs/test_test70001/"
+  ))
+}
+input_dir <- args[1]
+if (!dir.exists(input_dir)) {
+  stop(paste0("Directory not found: '", input_dir, "'"))
+}
+
+data_path <- file.path(input_dir, "worm_results_4solidityEtOlTp.csv")
+
+if (!file.exists(data_path)) {
+  stop(paste0("Input file not found: ", data_path, "\nRun PySWIPR_v1.R first."))
+}
+
 data <- as_tibble(fread(data_path))
 
 # The inflection point of the angle vs frame plot is the number of 0-crossings in the second derivative plot
@@ -50,4 +69,4 @@ k <- thrash_df_2[
 thrash_df_final <- as_tibble(k) %>% 
   mutate(`Thrash rate` = Thrashes / Frames * 1800) # Normalizing thrash count to thrash rate
 thrash_df_final[is.na(thrash_df_final)] <- 0
-fwrite(thrash_df_final, file = "thrash.csv")
+fwrite(thrash_df_final, file = file.path(input_dir, "thrash.csv"))

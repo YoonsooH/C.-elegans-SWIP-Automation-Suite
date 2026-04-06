@@ -5,9 +5,9 @@ A three-program pipeline for automated *C. elegans* thrash-rate analysis from mu
 ## Quick Start
 
 ```
-video (.avi/.mp4)  →  PySWIP  →  worm_results.csv
-worm_results.csv   →  PySWIPR  →  worm_results_4solidityEtOlTp.csv
-worm_results_4solidityEtOlTp.csv  →  BATRR  →  thrash.csv
+video (.avi/.mp4)  →  PySWIP  →  outputs/<video_name>/worm_results.csv
+worm_results.csv   →  PySWIPR  →  outputs/<video_name>/worm_results_4solidityEtOlTp.csv
+worm_results_4solidityEtOlTp.csv  →  BATRR  →  outputs/<video_name>/thrash.csv
 ```
 
 ---
@@ -34,23 +34,19 @@ install.packages(c("tidyverse", "data.table", "ggpubr", "pracma"))
 
 ## Step 1: PySWIP — Extract Worm Angles from Video
 
-### 1.1 Set Your Video Path
+### 1.1 Run the Tracker
 
-Open `PySWIP_v4.py` and edit line 53:
-
-```python
-VIDEO_PATH = 'worm videos/your_video.avi'
-```
-
-### 1.2 Run the Tracker
+Pass your video path as a command-line argument:
 
 ```bash
-python PySWIP_v4.py
+python PySWIP_v4.py "worm videos/your_video.avi"
 ```
+
+All outputs are automatically saved to `outputs/<video_name>/` (e.g., `outputs/your_video/`).
 
 Two windows open: **Setup** (video preview) and **Labels** (slider reference).
 
-### 1.3 Configure the Well Grid
+### 1.2 Configure the Well Grid
 
 Use the trackbars to match your multi-well plate:
 
@@ -67,21 +63,21 @@ Use the trackbars to match your multi-well plate:
 | **Max Area** | Maximum blob area in px² — filters out merged blobs or smears |
 | **FAST MODE** | `0` = show live visualisation (slow); `1` = no display (fast) |
 
-### 1.4 Place Wells on the Grid
+### 1.3 Place Wells on the Grid
 
 1. Set **Adjust Mode = 0** (grid mode).
 2. Click on any grid circle to **lock** that well (it turns red).
 3. Click again to **unlock** it.
 4. Only locked wells will be analysed.
 
-### 1.5 Fine-Tune Detection
+### 1.4 Fine-Tune Detection
 
 The preview highlights detected worm pixels in **green**. Adjust **Threshold**, **Small Obj**, and **Max Area** until:
 - Real worms are fully highlighted
 - Background noise is not highlighted
 - Debris and bubbles are excluded
 
-### 1.6 Start Analysis
+### 1.5 Start Analysis
 
 Press **SPACE** to save the config and begin frame-by-frame analysis.
 
@@ -93,9 +89,9 @@ During analysis (FAST MODE = 0), two additional windows appear:
 - **Live Dashboard** — shows per-well status and active objects
 - **Slow Analysis** — live video overlay with spine and contour visualisation
 
-### 1.7 Output: `worm_results.csv`
+### 1.6 Output: `worm_results.csv`
 
-One row per detected object per frame, with 30 columns:
+One row per detected object per frame, with 30 columns. All outputs are saved to `outputs/<video_name>/`.
 
 | Group | Key Columns |
 |-------|------------|
@@ -113,10 +109,10 @@ One row per detected object per frame, with 30 columns:
 ### 2.1 Run the Filtering Script
 
 ```bash
-Rscript PySWIPR_v1.R
+Rscript PySWIPR_v1.R outputs/my_video/
 ```
 
-The script reads `worm_results.csv` and applies four sequential filters.
+The script reads `worm_results.csv` from the target directory and applies four sequential filters.
 
 ### 2.2 The Four Filters
 
@@ -142,7 +138,7 @@ Same column structure as the raw CSV, but with debris, short-lived objects, over
 ### 3.1 Run the Thrash Calculation
 
 ```bash
-Rscript BATRR_v1.R
+Rscript BATRR_v1.R outputs/my_video/
 ```
 
 ### 3.2 How It Works
@@ -206,7 +202,7 @@ Each tuple is `(start_frame, end_frame)`. Adjust the range and step to match you
 
 ### Config File
 
-When you press SPACE in Setup mode, all slider values are saved to `setup_config.json`. On subsequent runs, these values load automatically. To reset, delete the file or edit it manually.
+When you press SPACE in Setup mode, all slider values are saved to `setup_config.json` inside `outputs/<video_name>/`. On subsequent runs of the same video, these values load automatically. To reset, delete the file or edit it manually.
 
 > [!NOTE]
 > For technical details on how this algorithm works, check out the technicalities_accessible.pdf within the `documentation` folder.
