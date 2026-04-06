@@ -63,23 +63,30 @@ Use the trackbars to match your multi-well plate:
 | **Max Area** | Maximum blob area in px² — filters out merged blobs or smears |
 | **FAST MODE** | `0` = show live visualisation (slow); `1` = no display (fast) |
 
-### 1.3 Place Wells on the Grid
+### 1.3 Set Up the Grid
+
+Set **Rows** and **Cols** to match the number of wells in your multi-well plate. Then use **Radius**, **Start X/Y**, and **Spacing X/Y** to roughly position and size the grid over your wells. You can fine-tune individual circle positions later during the locking step.
+
+### 1.4 Tune Worm Detection Parameters
+
+Adjust **Threshold**, **Small Obj**, and **Max Area** until the green overlay accurately highlights real worms while excluding noise, debris, and bubbles. You can use the **Ref Frame** trackbar (or press **j** to jump) to skip to any frame that shows worms clearly — use whichever frame helps you dial in the best detection across all wells.
+
+### 1.5 Lock Each Well at Its Starting Frame
+
+The frame displayed when you click to lock a well becomes that well's **starting frame** for analysis. Follow this procedure for each well you want to analyse:
 
 1. Set **Adjust Mode = 0** (grid mode).
-2. Click on any grid circle to **lock** that well (it turns red).
-3. Click again to **unlock** it.
-4. Only locked wells will be analysed.
+2. Use the **Ref Frame** trackbar (or press **j**) to skip to the beginning frame for the well you want to lock.
+3. Click the corresponding grid circle to **lock** it (it turns red). This locks in both the well and its starting frame.
+4. If the circle position needs fine-tuning, set **Adjust Mode = 1** (drag mode) and drag the circle to centre it on the worm, then set **Adjust Mode = 0** again.
+5. Move on to the next well and repeat from step 1.
 
-### 1.4 Fine-Tune Detection
+> [!WARNING]
+> Be deliberate about which frame is displayed when you lock each well — that frame becomes the well's starting point for all analysis. Locking a well at the wrong frame will produce inaccurate results.
 
-The preview highlights detected worm pixels in **green**. Adjust **Threshold**, **Small Obj**, and **Max Area** until:
-- Real worms are fully highlighted
-- Background noise is not highlighted
-- Debris and bubbles are excluded
+### 1.6 Start Analysis
 
-### 1.5 Start Analysis
-
-Press **SPACE** to save the config and begin frame-by-frame analysis.
+When all wells are locked and positioned, press **SPACE** to save the config and begin frame-by-frame analysis.
 
 | Key | Action |
 |-----|--------|
