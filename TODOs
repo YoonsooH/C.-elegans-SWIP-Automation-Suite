@@ -1,0 +1,4 @@
+Remake such that:
+Users can place videos they want to analyze in the 'worm_videos' folder, then all outputs will be stored in a folder called 'outputs' where all output is organized by the name of the input video (so it's all nice and organized).
+
+Will need to change output file path that depends on the name of the video (e.g., name of video might be 'swip1.avi')
