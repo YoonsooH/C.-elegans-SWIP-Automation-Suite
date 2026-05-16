@@ -731,6 +731,32 @@ def build_worm_preview(canvas, gray_orig, scale_d, T_val, small_obj_area,
 
 
 # ---------------------------------------------------------------------------
+# PROGRESS WINDOW
+# ---------------------------------------------------------------------------
+def draw_progress_window(curr_f, total_f, global_start):
+    W, H = 500, 100
+    img = np.full((H, W, 3), (30, 30, 40), dtype=np.uint8)
+    progress = (curr_f - global_start) / max(1, total_f - global_start)
+    pct = min(progress * 100, 100)
+
+    cv2.putText(img, f"Frame: {curr_f} / {total_f}",
+                (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+
+    bar_x, bar_y, bar_w, bar_h = 10, 40, W - 20, 28
+    cv2.rectangle(img, (bar_x, bar_y), (bar_x + bar_w, bar_y + bar_h), (60, 60, 70), -1)
+    fill_w = int(bar_w * pct / 100)
+    if fill_w > 0:
+        cv2.rectangle(img, (bar_x, bar_y), (bar_x + fill_w, bar_y + bar_h), (0, 180, 80), -1)
+    pct_text = f"{pct:.1f}%"
+    (tw, th), _ = cv2.getTextSize(pct_text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+    cv2.putText(img, pct_text,
+                (bar_x + bar_w // 2 - tw // 2, bar_y + bar_h // 2 + th // 2 - 2),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+
+    return img
+
+
+# ---------------------------------------------------------------------------
 # MAIN
 # ---------------------------------------------------------------------------
 def main():
@@ -1121,8 +1147,13 @@ def main():
                     })
                 current_stats[wid]["objects"] = obj_stats
 
+            if curr_f == global_start + 1:
+                cv2.namedWindow('Progress', cv2.WINDOW_NORMAL)
+                cv2.resizeWindow('Progress', 520, 120)
             cv2.imshow('Live Dashboard',
                        draw_dashboard(dash_rows, dash_cols, well_data, current_stats))
+            cv2.imshow('Progress',
+                       draw_progress_window(curr_f, total_f, global_start))
             if not final_fast_mode:
                 cv2.imshow('Slow Analysis',
                            cv2.resize(frame, (1000, int(h_orig * (1000 / w_orig)))))
@@ -1130,6 +1161,7 @@ def main():
                 break
 
     finally:
+        cv2.destroyWindow('Progress')
         if data_buffer:
             df = pd.DataFrame(data_buffer, columns=CSV_COLUMNS)
             df.to_csv(csv_file, index=False)
